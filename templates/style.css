@@ -2,7 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 /* Typography & Base Styles */
-html, body, .stApp {
+html,
+body,
+.stApp {
     font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
     background-color: #f8fafc !important;
     color: #0f172a !important;
@@ -48,16 +50,6 @@ section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
     color: #64748b;
     margin: 0;
     font-weight: 400;
-}
-
-.header-badge {
-    background: #e0f2fe;
-    color: #0369a1;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    border: 1px solid #bae6fd;
 }
 
 /* Bespoke Premium Card Elements */
@@ -175,19 +167,23 @@ section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
     left: 0;
     width: 4px;
     height: 100%;
-    background-color: #0284c7; /* Sky accent */
+    background-color: #0284c7;
+    /* Sky accent */
 }
 
 .stat-cell:nth-child(2)::before {
-    background-color: #0d9488; /* Teal accent */
+    background-color: #0d9488;
+    /* Teal accent */
 }
 
 .stat-cell:nth-child(3)::before {
-    background-color: #4f46e5; /* Indigo accent */
+    background-color: #4f46e5;
+    /* Indigo accent */
 }
 
 .stat-cell:nth-child(4)::before {
-    background-color: #6366f1; /* Purple accent */
+    background-color: #6366f1;
+    /* Purple accent */
 }
 
 .stat-label {
@@ -262,7 +258,8 @@ section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
 }
 
 /* Specific styling for stDownloadButton wrapper */
-div[data-testid="stDownloadButton"] button, .stDownloadButton button {
+div[data-testid="stDownloadButton"] button,
+.stDownloadButton button {
     background-color: #0f172a !important;
     color: #ffffff !important;
     border: 1px solid #0f172a !important;
@@ -278,7 +275,8 @@ div[data-testid="stDownloadButton"] button, .stDownloadButton button {
     align-items: center !important;
 }
 
-div[data-testid="stDownloadButton"] button:hover, .stDownloadButton button:hover {
+div[data-testid="stDownloadButton"] button:hover,
+.stDownloadButton button:hover {
     background-color: #1e293b !important;
     border-color: #1e293b !important;
     color: #ffffff !important;
@@ -327,6 +325,13 @@ code.premium-code {
 
 /* Key animation */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

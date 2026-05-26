@@ -8,7 +8,7 @@ import io
 
 # --- PAGE SETUP ---
 st.set_page_config(
-    page_title="Rental Automation Pro",
+    page_title="Rental Automation",
     page_icon="🏢",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -306,7 +306,7 @@ header_html = load_template("header.html")
 if header_html:
     st.markdown(header_html, unsafe_allow_html=True)
 else:
-    st.title("🏢 Rental Automation Engine")
+    st.title("🏢 Rental Automation")
 
 # 2. Sidebar Upload and Parameter Panel Configuration
 st.sidebar.markdown('<p style="font-size: 1.3rem; font-weight:700; color:#f8fafc; margin-bottom: 15px;">📁 Data Ingestion</p>', unsafe_allow_html=True)
