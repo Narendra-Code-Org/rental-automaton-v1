@@ -1,0 +1,33 @@
+<div class="status-card status-card-success">
+    <div class="status-icon-wrapper status-icon-wrapper-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+    </div>
+    <div class="status-content">
+        <h3 class="status-title">Workbook Successfully Compiled</h3>
+        <p class="status-description">
+            Parameter overrides from inputs applied successfully to <strong>{reu_name}</strong>. 
+            All carrying-cost formulas, rent schedules, and asset retirement obligations (ARO) have been dynamically calculated and injected.
+        </p>
+        <div class="preview-summary-grid">
+            <div class="preview-item">
+                <span class="preview-item-label">Target REU:</span>
+                <span class="preview-item-val">{reu_name}</span>
+            </div>
+            <div class="preview-item">
+                <span class="preview-item-label">Chargeable Area:</span>
+                <span class="preview-item-val">{area} sqft</span>
+            </div>
+            <div class="preview-item">
+                <span class="preview-item-label">Lease Duration:</span>
+                <span class="preview-item-val">{duration} yrs</span>
+            </div>
+            <div class="preview-item">
+                <span class="preview-item-label">Total Deposits:</span>
+                <span class="preview-item-val">{currency} {total_deposit}</span>
+            </div>
+        </div>
+    </div>
+</div>

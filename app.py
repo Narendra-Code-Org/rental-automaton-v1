@@ -5,9 +5,8 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 import datetime
 import os
 import io
-import plotly.graph_objects as go
 
-# --- PAGE SETUP & PREMIUM STYLING ---
+# --- PAGE SETUP ---
 st.set_page_config(
     page_title="Rental Automation Pro",
     page_icon="🏢",
@@ -15,101 +14,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Premium Google Font and Custom CSS with Harmonious Color Palettes & Micro-animations
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif;
-    }
-    
-    /* Main container styling */
-    .stApp {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    }
-    
-    /* Card Container with glassmorphism and subtle shadow */
-    .premium-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-        transition: all 0.3s ease-in-out;
-        margin-bottom: 20px;
-    }
-    
-    .premium-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    
-    /* Elegant Title Badge */
-    .badge-title {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
-        font-size: 2.5rem;
-        margin-bottom: 5px;
-    }
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: #0f172a;
-        color: #f8fafc;
-        border-right: 1px solid #1e293b;
-    }
-    
-    /* Tab Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: #f1f5f9;
-        padding: 6px;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 45px;
-        white-space: pre-wrap;
-        background-color: transparent;
-        border-radius: 8px;
-        color: #475569;
-        font-weight: 500;
-        border: none;
-        transition: all 0.2s ease;
-        padding: 0px 20px;
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: rgba(255, 255, 255, 0.8);
-        color: #0f172a;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: #ffffff !important;
-        color: #4f46e5 !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    }
-    
-    /* Metrics section */
-    .metric-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #1e1b4b;
-    }
-    .metric-label {
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        color: #64748b;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-    }
-</style>
-""", unsafe_allow_html=True)
+# --- TEMPLATE UTILITIES ---
+def load_template(filename, directory="templates"):
+    """Reads raw file contents from templates directory for dynamic HTML/CSS injection."""
+    path = os.path.join(directory, filename)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception:
+            return ""
+    return ""
+
+# Inject custom stylesheet from templates directory
+style_css = load_template("style.css")
+if style_css:
+    st.markdown(f"<style>{style_css}</style>", unsafe_allow_html=True)
 
 
 # --- DYNAMIC EXCEL PARSER ---
@@ -136,7 +56,6 @@ def parse_input_xlsx(file_bytes):
             if isinstance(date_val, (datetime.date, datetime.datetime)):
                 return date_val.date() if isinstance(date_val, datetime.datetime) else date_val
             try:
-                # String standard format parse e.g. 01-Apr-2026
                 return pd.to_datetime(str(date_val).strip()).date()
             except Exception:
                 return default
@@ -171,7 +90,7 @@ def parse_input_xlsx(file_bytes):
         freq_val = raw_params.get("Escalation Frequency Months", 36)
         if freq_val is not None:
             freq_val = float(freq_val)
-            if freq_val < 1.0: # e.g. 0.36
+            if freq_val < 1.0:
                 freq_val = int(round(freq_val * 100))
             else:
                 freq_val = int(freq_val)
@@ -203,7 +122,7 @@ def parse_input_xlsx(file_bytes):
                 except Exception:
                     pass
         params["Quoted CAM"] = cam_rate if cam_rate is not None else 15.48
-        params["CAM Escalation %"] = 0.05 # Default CAM escalation rate
+        params["CAM Escalation %"] = 0.05
         
         return params, None
     except Exception as e:
@@ -226,7 +145,7 @@ def generate_output_workbook(template_path, params):
     ws_main["B7"] = params["Rent Per Sqft"]
     ws_main["B8"] = params["Quoted CAM"]
     ws_main["B9"] = params["Security Deposit Amount"]
-    ws_main["B10"] = params["Fitout Cost"] * 1.2 # Match spec Capex ratio or fitout cost
+    ws_main["B10"] = params["Fitout Cost"] * 1.2
     ws_main["B12"] = params["Cost of Capital"]
     ws_main["B13"] = params["Cost of Capital"] / 2.0
     
@@ -248,7 +167,7 @@ def generate_output_workbook(template_path, params):
     ws_rent["H31"] = "=Main!B7"
     ws_rent["J31"] = "=Main!B8"
     
-    # Update Years in G15-G21 dynamically so financial summaries display correctly
+    # Update Years dynamically so financial summaries display correctly
     ws_rent["G15"] = "=A31"
     
     # Save to a memory stream for download
@@ -258,7 +177,7 @@ def generate_output_workbook(template_path, params):
     return output
 
 
-# --- PYTHON RENT SCHEDULE SIMULATOR (FOR UI GRAPH/TABLE PREVIEWS) ---
+# --- PYTHON RENT SCHEDULE SIMULATOR ---
 def simulate_schedule(params):
     """Simulates month-by-month rent/CAM escalation exactly like Excel formulas."""
     start_year = params["Agreement Start Date"].year
@@ -267,12 +186,11 @@ def simulate_schedule(params):
     rows = []
     current_from = start_date
     area_sqft = params["Chargeable Area Sqft"]
-    area_sqm = area_sqft / 10.764
     base_rent = params["Rent Per Sqft"]
     base_cam = params["Quoted CAM"]
     
     for m in range(1, 73):
-        # 1. Fiscal Year classification
+        # Fiscal Year classification
         if m <= 9:
             fy_year = start_year
         elif 10 <= m <= 21:
@@ -288,25 +206,24 @@ def simulate_schedule(params):
         else:
             fy_year = start_year + 6
             
-        # 2. To Date calculation
-        if m in [2, 14, 26, 38, 50, 62]: # February rows
-            # Leap year adjustment
+        # To Date calculation
+        if m in [2, 14, 26, 38, 50, 62]:
             is_leap = (current_from.year % 4 == 0 and (current_from.year % 100 != 0 or current_from.year % 400 == 0))
             days = 29 if is_leap else 28
-        elif m in [4, 6, 7, 16, 18, 20, 28, 30, 32, 40, 42, 44, 52, 54, 56, 64, 66, 68, 70, 72]: # 30 day rows in spec formulas
+        elif m in [4, 6, 7, 16, 18, 20, 28, 30, 32, 40, 42, 44, 52, 54, 56, 64, 66, 68, 70, 72]:
             days = 30
         else:
             days = 31
             
         current_to = current_from + datetime.timedelta(days=days-1)
         
-        # 3. Rent rate (15% escalation every 3 years / 36 months)
-        if m <= 36:
+        # Rent rate (escalation rate every escalation frequency months)
+        if m <= params["Escalation Frequency Months"]:
             rent_rate = base_rent
         else:
             rent_rate = base_rent * (1.0 + params["Escalation %"])
             
-        # 4. CAM rate (5% escalation in Month 14, 26, 37, 50, 62)
+        # CAM rate (5% escalation in Month 14, 26, 37, 50, 62)
         if m <= 13:
             cam_rate = base_cam
         elif 14 <= m <= 25:
@@ -343,19 +260,19 @@ def simulate_schedule(params):
     return pd.DataFrame(rows)
 
 
-# --- DYNAMIC SECURITY DEPOSIT & ARO WORKING SIMULATOR ---
+# --- SECURITY DEPOSIT & ARO SIMULATOR ---
 def compute_deposit_working(params, schedule_df):
     """Simulates carrying costs and ARO parameters from inputs."""
-    sd_amount = params["Security DepositAmount"] if "Security DepositAmount" in params else params["Security Deposit Amount"]
+    sd_amount = params["Security Deposit Amount"]
     rate_capital = params["Cost of Capital"]
-    term_months = 72 # Total months in schedule
+    term_months = 72
     
     # Interest carrying costs calculations
     sd_interest = sd_amount * rate_capital / 12 * term_months
     energy_deposit = params["Addnl.Deposit -energy(Refundable)"]
-    energy_interest = energy_deposit * rate_capital * 3 # matching formula: =+B6*B9*3
+    energy_interest = energy_deposit * rate_capital * 3
     
-    fitout_interest = 0.0 # B3 = 0, so C3 = 0
+    fitout_interest = 0.0
     total_sd = sd_amount + energy_deposit
     total_interest = sd_interest + energy_interest
     
@@ -382,23 +299,20 @@ def compute_deposit_working(params, schedule_df):
     return results
 
 
-# --- STREAMLIT UI DESIGN & INTERACTIVITY ---
+# --- STREAMLIT UI LAYOUT & CONTROLS ---
 
-# Header Panel
-col_title, col_logo = st.columns([7, 1])
-with col_title:
-    st.markdown('<p class="badge-title">🏢 Rental Automation Pro</p>', unsafe_allow_html=True)
-    st.markdown('<p style="color: #64748b; font-size: 1.15rem; margin-top:-10px;">High-Fidelity Lease Parameter Integration and Excel Generation Engine</p>', unsafe_allow_html=True)
+# 1. Render custom premium header
+header_html = load_template("header.html")
+if header_html:
+    st.markdown(header_html, unsafe_allow_html=True)
+else:
+    st.title("🏢 Rental Automation Engine")
 
-st.markdown("---")
-
-# Sidebar file uploader and manual overrides
-st.sidebar.markdown('<p style="font-size: 1.4rem; font-weight:700; color:#f8fafc; margin-bottom: 15px;">📁 Upload & Configure</p>', unsafe_allow_html=True)
+# 2. Sidebar Upload and Parameter Panel Configuration
+st.sidebar.markdown('<p style="font-size: 1.3rem; font-weight:700; color:#f8fafc; margin-bottom: 15px;">📁 Data Ingestion</p>', unsafe_allow_html=True)
 uploaded_file = st.sidebar.file_uploader("Upload Lease Parameter Workbook (.xlsx)", type=["xlsx"])
 
-st.sidebar.markdown('<p style="font-size: 1.2rem; font-weight:600; color:#cbd5e1; margin-top: 20px;">⚙️ Parameter Overrides</p>', unsafe_allow_html=True)
-
-# Default Mock values matching specimen/input sheet to let users test instantly
+# Default fallback values matching specimen
 default_params = {
     "REU Name": "IN-CHEK2",
     "Building Name": "SKCL Tech Park",
@@ -419,19 +333,22 @@ default_params = {
     "Cost of Capital": 0.15
 }
 
-# Load parsed values if file is uploaded, otherwise use defaults
+params = default_params
+parse_error_msg = None
+upload_occurred = False
+
+# Process upload if present
 if uploaded_file is not None:
+    upload_occurred = True
     parsed_vals, err = parse_input_xlsx(uploaded_file)
     if err:
-        st.sidebar.error(f"Error parsing workbook: {err}")
-        params = default_params
+        parse_error_msg = err
     else:
-        st.sidebar.success("Workbook parsed successfully!")
         params = parsed_vals
-else:
-    params = default_params
 
-# Editable Sidebar controls
+# Render sidebar override controls (dynamic inputs)
+st.sidebar.markdown('<p style="font-size: 1.25rem; font-weight:600; color:#cbd5e1; margin-top: 20px;">⚙️ Parameter Configuration</p>', unsafe_allow_html=True)
+
 reu_name = st.sidebar.text_input("Real Estate Unit (REU) Name", value=params["REU Name"])
 bldg_name = st.sidebar.text_input("Building Name", value=params["Building Name"])
 city = st.sidebar.text_input("City", value=params["City"])
@@ -456,7 +373,7 @@ capital_rate = st.sidebar.slider("Cost of Capital %", min_value=0.0, max_value=0
 energy_dep = st.sidebar.number_input("Energy Deposit Amount", value=float(params["Addnl.Deposit -energy(Refundable)"]), step=10000.0)
 fitout_cost = st.sidebar.number_input("Capex (Fitout cost)", value=float(params["Fitout Cost"]), step=50000.0)
 
-# Merge UI modifications back into the parameters dictionary
+# Pack active values into parameters dictionary
 ui_params = {
     "REU Name": reu_name,
     "Building Name": bldg_name,
@@ -477,170 +394,89 @@ ui_params = {
     "Fitout Cost": float(fitout_cost)
 }
 
-# Run live Python-side simulations
+# Run live models / schedule simulations in memory
 schedule_df = simulate_schedule(ui_params)
 sd_results = compute_deposit_working(ui_params, schedule_df)
 
-# --- STATS SUMMARY BAR ---
-st.markdown("### 📊 Live Parameter Dashboard")
-col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+# Initialize session state for download status
+if "download_clicked" not in st.session_state:
+    st.session_state.download_clicked = False
 
-with col_s1:
-    st.markdown(f"""
-    <div class="premium-card">
-        <div class="metric-label">Chargeable Office Area</div>
-        <div class="metric-value">{int(ui_params['Chargeable Area Sqft']):,} sqft</div>
-        <div style="font-size:0.85rem; color:#64748b; margin-top:2px;">≈ {ui_params['Chargeable Area Sqft']/10.764:,.2f} sq.m.</div>
+# Signature of parameters to auto-hide previews if values are modified
+current_sig = f"{reu_name}-{bldg_name}-{city}-{area}-{start_date}-{end_date}-{rent_sqft}-{cam_sqft}-{rent_esc}-{rent_esc_freq}-{cam_esc}-{sec_deposit}-{capital_rate}-{energy_dep}-{fitout_cost}"
+if "last_params_sig" not in st.session_state:
+    st.session_state.last_params_sig = current_sig
+
+if st.session_state.last_params_sig != current_sig:
+    st.session_state.download_clicked = False
+    st.session_state.last_params_sig = current_sig
+
+def handle_download():
+    st.session_state.download_clicked = True
+
+# --- DYNAMIC STATUS CARD SECTION ---
+if parse_error_msg:
+    error_tpl = load_template("error_card.html")
+    if error_tpl:
+        st.markdown(error_tpl.format(error_message=f"Failed to parse sheet: {parse_error_msg}"), unsafe_allow_html=True)
+    else:
+        st.error(f"Failed to parse sheet: {parse_error_msg}")
+elif upload_occurred:
+    success_tpl = load_template("success_card.html")
+    if success_tpl:
+        total_sd = ui_params["Security Deposit Amount"] + ui_params["Addnl.Deposit -energy(Refundable)"]
+        duration_yrs = (ui_params["Agreement End Date"] - ui_params["Agreement Start Date"]).days / 365.0
+        st.markdown(success_tpl.format(
+            reu_name=ui_params["REU Name"],
+            area=f"{int(ui_params['Chargeable Area Sqft']):,}",
+            duration=f"{duration_yrs:.2f}",
+            currency=ui_params["Currency"],
+            total_deposit=f"{total_sd:,.2f}"
+        ), unsafe_allow_html=True)
+    else:
+        st.success(f"Workbook parameters for {ui_params['REU Name']} compiled successfully!")
+else:
+    info_tpl = load_template("info_card.html")
+    if info_tpl:
+        st.markdown(info_tpl, unsafe_allow_html=True)
+
+# --- LIVE METRIC DASHBOARD (CUSTOM BESPOKE HTML GRID) ---
+total_rent_cam = ui_params["Rent Per Sqft"] + ui_params["Quoted CAM"]
+duration_yrs = (ui_params["Agreement End Date"] - ui_params["Agreement Start Date"]).days / 365.0
+total_sd_amount = ui_params["Security Deposit Amount"] + ui_params["Addnl.Deposit -energy(Refundable)"]
+
+metrics_html = f"""
+<div class="stats-grid">
+    <div class="stat-cell">
+        <span class="stat-label">Chargeable Area</span>
+        <span class="stat-value">{int(ui_params['Chargeable Area Sqft']):,} sqft</span>
+        <span class="stat-meta">≈ {ui_params['Chargeable Area Sqft']/10.764:,.2f} sq.m.</span>
     </div>
-    """, unsafe_allow_html=True)
-    
-with col_s2:
-    st.markdown(f"""
-    <div class="premium-card">
-        <div class="metric-label">Initial Rent + CAM Rate</div>
-        <div class="metric-value">{ui_params['Currency']} {ui_params['Rent Per Sqft'] + ui_params['Quoted CAM']:.2f}</div>
-        <div style="font-size:0.85rem; color:#64748b; margin-top:2px;">Rent: {ui_params['Rent Per Sqft']} | CAM: {ui_params['Quoted CAM']}</div>
+    <div class="stat-cell">
+        <span class="stat-label">Initial Rent + CAM Rate</span>
+        <span class="stat-value">{ui_params['Currency']} {total_rent_cam:.2f}</span>
+        <span class="stat-meta">Rent: {ui_params['Rent Per Sqft']:.1f} | CAM: {ui_params['Quoted CAM']:.2f}</span>
     </div>
-    """, unsafe_allow_html=True)
-    
-with col_s3:
-    st.markdown(f"""
-    <div class="premium-card">
-        <div class="metric-label">Security Deposit Amount</div>
-        <div class="metric-value">{ui_params['Currency']} {ui_params['Security Deposit Amount']:,.2f}</div>
-        <div style="font-size:0.85rem; color:#64748b; margin-top:2px;">Interest rate: {ui_params['Cost of Capital']*100:.1f}%</div>
+    <div class="stat-cell">
+        <span class="stat-label">Total Deposits</span>
+        <span class="stat-value">{ui_params['Currency']} {total_sd_amount:,.2f}</span>
+        <span class="stat-meta">Capital cost rate: {ui_params['Cost of Capital']*100:.1f}%</span>
     </div>
-    """, unsafe_allow_html=True)
-    
-with col_s4:
-    st.markdown(f"""
-    <div class="premium-card">
-        <div class="metric-label">Lease Term Coverage</div>
-        <div class="metric-value">{(ui_params['Agreement End Date'] - ui_params['Agreement Start Date']).days/365:.2f} yrs</div>
-        <div style="font-size:0.85rem; color:#64748b; margin-top:2px;">{ui_params['Agreement Start Date'].strftime('%b %Y')} to {ui_params['Agreement End Date'].strftime('%b %Y')}</div>
+    <div class="stat-cell">
+        <span class="stat-label">Lease Duration</span>
+        <span class="stat-value">{duration_yrs:.2f} yrs</span>
+        <span class="stat-meta">{ui_params['Agreement Start Date'].strftime('%b %d, %Y')} to {ui_params['Agreement End Date'].strftime('%b %d, %Y')}</span>
     </div>
-    """, unsafe_allow_html=True)
+</div>
+"""
+st.markdown(metrics_html, unsafe_allow_html=True)
 
 
-# --- TAB PREVIEWS ---
-tab_main, tab_schedule, tab_deposit = st.tabs([
-    "📂 Sheet 1: Main Summary Preview",
-    "📈 Sheet 2: Monthly Lease Schedule & Plot",
-    "🛡️ Sheet 3: Security Deposit Working"
-])
-
-# 1. Main Sheet Tab
-with tab_main:
-    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-    st.subheader("🏢 Main Summary Meta-Properties")
-    
-    col_m1, col_m2 = st.columns(2)
-    with col_m1:
-        st.markdown(f"**REU Name:** `{ui_params['REU Name']}`")
-        st.markdown(f"**Building Name:** `{ui_params['Building Name']}`")
-        st.markdown(f"**City & Country:** `{ui_params['City']}, {ui_params['Country']}`")
-        st.markdown(f"**Chargeable Area:** `{ui_params['Chargeable Area Sqft']:,} Sq.ft.` (`{ui_params['Chargeable Area Sqft']/10.764:,.2f} Sq.m.`)")
-        st.markdown(f"**Agreement Term:** `{ui_params['Agreement Start Date'].strftime('%d-%b-%Y')} to {ui_params['Agreement End Date'].strftime('%d-%b-%Y')}`")
-        st.markdown(f"**Agreement Period:** `{(ui_params['Agreement End Date'] - ui_params['Agreement Start Date']).days / 365.0:.2f} Years`")
-    with col_m2:
-        st.markdown(f"**Rent Rate / Sqft / Mo:** `{ui_params['Currency']} {ui_params['Rent Per Sqft']:.2f}`")
-        st.markdown(f"**CAM Rate / Sqft / Mo:** `{ui_params['Currency']} {ui_params['Quoted CAM']:.2f}`")
-        st.markdown(f"**Capex (Fitout cost):** `{ui_params['Currency']} {ui_params['Fitout Cost']:,.2f}`")
-        st.markdown(f"**Security Deposit:** `{ui_params['Currency']} {ui_params['Security Deposit Amount']:,.2f}`")
-        st.markdown(f"**Rent Escalation Clause:** `{int(ui_params['Escalation %'] * 100)}% every {int(ui_params['Escalation Frequency Months'] // 12)} years`")
-        st.markdown(f"**CAM Escalation Clause:** `{int(ui_params['CAM Escalation %'] * 100)}% every year`")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 2. Schedule & Chart Tab
-with tab_schedule:
-    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-    st.subheader("📈 Escalation Trend Chart & Forecast")
-    
-    # Plotly Line Chart for Rentals vs CAM
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=schedule_df["Month #"], 
-        y=schedule_df["Rent Rate ($/Sqft)"],
-        mode='lines+markers',
-        name='Rental Rate / Sqft',
-        line=dict(color='#4f46e5', width=3),
-        marker=dict(size=6)
-    ))
-    fig.add_trace(go.Scatter(
-        x=schedule_df["Month #"], 
-        y=schedule_df["CAM Rate ($/Sqft)"],
-        mode='lines+markers',
-        name='CAM Rate / Sqft',
-        line=dict(color='#10b981', width=3, dash='dash'),
-        marker=dict(size=6)
-    ))
-    
-    fig.update_layout(
-        title="Dynamic Rate Escalation Lifecycle (72 Months)",
-        xaxis_title="Lease Schedule Months",
-        yaxis_title=f"Rate ({ui_params['Currency']} / Sq.ft. / Month)",
-        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
-        margin=dict(l=20, r=20, t=50, b=20),
-        plot_bgcolor='rgba(248, 250, 252, 0.5)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        hovermode="x"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Grouped Financial Summaries
-    st.markdown("#### Monthly Rent Schedule Table View")
-    
-    # Beautiful Pandas table view with formatted currencies
-    display_df = schedule_df.copy()
-    display_df["Rent Amount"] = display_df["Rent Amount"].map(lambda x: f"{ui_params['Currency']} {x:,.2f}")
-    display_df["CAM Amount"] = display_df["CAM Amount"].map(lambda x: f"{ui_params['Currency']} {x:,.2f}")
-    display_df["Total Billing"] = display_df["Total Billing"].map(lambda x: f"{ui_params['Currency']} {x:,.2f}")
-    
-    st.dataframe(display_df, use_container_width=True, height=400)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 3. Security Deposit carrying cost Tab
-with tab_deposit:
-    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-    st.subheader("🛡️ Security Deposit Carrying Cost & Imputed Interest Workings")
-    
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
-        st.markdown("##### Carrying Cost Calculations")
-        sd_data = [
-            {"Deposit Component": "Fitout Deposit", "Amount": f"{ui_params['Currency']} {sd_results['Fitout Deposit'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Fitout Deposit'][1]:,.2f}"},
-            {"Deposit Component": "Security Deposit", "Amount": f"{ui_params['Currency']} {sd_results['Security Deposit'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Security Deposit'][1]:,.2f}"},
-            {"Deposit Component": "Energy Deposit", "Amount": f"{ui_params['Currency']} {sd_results['Energy Deposit'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Energy Deposit'][1]:,.2f}"},
-            {"Deposit Component": "Total Deposits", "Amount": f"{ui_params['Currency']} {sd_results['Total sd'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Total sd'][1]:,.2f}"}
-        ]
-        st.table(pd.DataFrame(sd_data))
-        st.markdown(f"**Carrying Cost Rate per Sqft:** `{sd_results['Carrying Cost per Sqft']:.6f} {ui_params['Currency']}/Sqft/mo`")
-    
-    with col_d2:
-        st.markdown("##### ARO (Asset Retirement Obligation) Workings")
-        aro_data = [
-            {"Property Description": "Area (Sq.ft.)", "Value": f"{area:,} Sq.ft."},
-            {"Property Description": "ARO Cost Rate per Sqft (as on 2017)", "Value": f"{sd_results['ARO Rate']:.2f}"},
-            {"Property Description": "Total ARO Capital Cost Asset", "Value": f"{ui_params['Currency']} {sd_results['Total ARO Cost']:,.2f}"},
-            {"Property Description": "Monthly ARO Amortization Cost", "Value": f"{ui_params['Currency']} {sd_results['ARO per Month']:,.2f}"},
-            {"Property Description": "Conversion Factor", "Value": f"{sd_results['ARO Conversion Factor']:.6f}"}
-        ]
-        st.table(pd.DataFrame(aro_data))
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# --- EXCEL WORKBOOK GENERATOR PANEL ---
-st.markdown("### 📤 Excel Workbook Generator & Download")
-st.markdown("""
-Press the button below to inject all of the customized parameters directly into the high-fidelity Excel workbook structure. 
-All formatting, sheets, carrying cost formulas, and dynamic financial aggregates will be fully preserved.
-""")
-
+# --- EXCEL WORKBOOK GENERATOR ---
 template_file_path = r"c:\Users\z004df5r\Documents\rental_automation_v1\artifacts\rental-specimen.xlsx"
 
 if os.path.exists(template_file_path):
     try:
-        # Build button and memory stream download
         output_stream = generate_output_workbook(template_file_path, ui_params)
         
         st.download_button(
@@ -648,10 +484,78 @@ if os.path.exists(template_file_path):
             data=output_stream,
             file_name=f"rental_sheet_{ui_params['REU Name']}_{datetime.date.today()}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
+            use_container_width=True,
+            on_click=handle_download
         )
-        st.success("Workbook is compiled and ready to download! Open in MS Excel to see carrying cost calculations live.")
     except Exception as e:
-        st.error(f"Failed to load Excel template or compile changes: {e}")
+        st.error(f"Excel template compilation failed: {e}")
 else:
-    st.warning(f"Master template workbook not found in workspace path: {template_file_path}. Please check file locations.")
+    st.warning(f"Excel template specimen not found in path: {template_file_path}")
+
+
+# --- SHEET CONTENT PREVIEWS (ELEGANT INTERACTIVE EXPANDERS) ---
+if st.session_state.download_clicked:
+    st.markdown("### 🔍 Live Excel Worksheet Previews")
+    
+    # Expander 1: Main Sheet Preview
+    with st.expander("📂 Sheet 1: Main Summary Properties"):
+        st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
+        st.markdown("<h4>🏢 Sheet 1 Variables Preview</h4>", unsafe_allow_html=True)
+        
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            st.markdown(f"**REU Name:** <code class='premium-code'>{ui_params['REU Name']}</code>", unsafe_allow_html=True)
+            st.markdown(f"**Building Name:** <code class='premium-code'>{ui_params['Building Name']}</code>", unsafe_allow_html=True)
+            st.markdown(f"**City & Country:** <code class='premium-code'>{ui_params['City']}, {ui_params['Country']}</code>", unsafe_allow_html=True)
+            st.markdown(f"**Chargeable Area:** <code class='premium-code'>{ui_params['Chargeable Area Sqft']:,} Sq.ft.</code>", unsafe_allow_html=True)
+            st.markdown(f"**Agreement Term:** <code class='premium-code'>{ui_params['Agreement Start Date'].strftime('%d-%b-%Y')} to {ui_params['Agreement End Date'].strftime('%d-%b-%Y')}</code>", unsafe_allow_html=True)
+        with col_m2:
+            st.markdown(f"**Rent Rate / Sqft / Mo:** <code class='premium-code'>{ui_params['Currency']} {ui_params['Rent Per Sqft']:.2f}</code>", unsafe_allow_html=True)
+            st.markdown(f"**Quoted CAM / Sqft / Mo:** <code class='premium-code'>{ui_params['Currency']} {ui_params['Quoted CAM']:.2f}</code>", unsafe_allow_html=True)
+            st.markdown(f"**Security Deposit:** <code class='premium-code'>{ui_params['Currency']} {ui_params['Security Deposit Amount']:,.2f}</code>", unsafe_allow_html=True)
+            st.markdown(f"**Rent Escalation Clause:** <code class='premium-code'>{int(ui_params['Escalation %'] * 100)}% every {int(ui_params['Escalation Frequency Months'] // 12)} years</code>", unsafe_allow_html=True)
+            st.markdown(f"**CAM Escalation Clause:** <code class='premium-code'>{int(ui_params['CAM Escalation %'] * 100)}% every year</code>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Expander 2: Lease Rent Schedule
+    with st.expander("📈 Sheet 2: Monthly Lease Schedule Preview"):
+        st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
+        st.markdown("<h4>📋 Rent Schedule Table View</h4>", unsafe_allow_html=True)
+        
+        # Beautifully styled formatted pandas dataframe
+        display_df = schedule_df.copy()
+        display_df["Rent Amount"] = display_df["Rent Amount"].map(lambda x: f"{ui_params['Currency']} {x:,.2f}")
+        display_df["CAM Amount"] = display_df["CAM Amount"].map(lambda x: f"{ui_params['Currency']} {x:,.2f}")
+        display_df["Total Billing"] = display_df["Total Billing"].map(lambda x: f"{ui_params['Currency']} {x:,.2f}")
+        
+        st.dataframe(display_df, use_container_width=True, height=350)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Expander 3: Security Deposit Workings
+    with st.expander("🛡️ Sheet 3: Security Deposit & ARO Working"):
+        st.markdown('<div class="workspace-card">', unsafe_allow_html=True)
+        st.markdown("<h4>🛡️ SD Imputed Interest & ARO Workings</h4>", unsafe_allow_html=True)
+        
+        col_d1, col_d2 = st.columns(2)
+        with col_d1:
+            st.markdown("##### Carrying Cost Calculations")
+            sd_data = [
+                {"Deposit Component": "Fitout Deposit", "Amount": f"{ui_params['Currency']} {sd_results['Fitout Deposit'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Fitout Deposit'][1]:,.2f}"},
+                {"Deposit Component": "Security Deposit", "Amount": f"{ui_params['Currency']} {sd_results['Security Deposit'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Security Deposit'][1]:,.2f}"},
+                {"Deposit Component": "Energy Deposit", "Amount": f"{ui_params['Currency']} {sd_results['Energy Deposit'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Energy Deposit'][1]:,.2f}"},
+                {"Deposit Component": "Total Deposits", "Amount": f"{ui_params['Currency']} {sd_results['Total sd'][0]:,.2f}", "Carrying Interest Cost": f"{ui_params['Currency']} {sd_results['Total sd'][1]:,.2f}"}
+            ]
+            st.table(pd.DataFrame(sd_data))
+            st.markdown(f"**Carrying Cost Rate per Sqft:** `{sd_results['Carrying Cost per Sqft']:.6f} {ui_params['Currency']}/Sqft/mo`")
+        
+        with col_d2:
+            st.markdown("##### ARO (Asset Retirement Obligation) Workings")
+            aro_data = [
+                {"Property Description": "Area (Sq.ft.)", "Value": f"{area:,} Sq.ft."},
+                {"Property Description": "ARO Cost Rate per Sqft (as on 2017)", "Value": f"{sd_results['ARO Rate']:.2f}"},
+                {"Property Description": "Total ARO Capital Cost Asset", "Value": f"{ui_params['Currency']} {sd_results['Total ARO Cost']:,.2f}"},
+                {"Property Description": "Monthly ARO Amortization Cost", "Value": f"{ui_params['Currency']} {sd_results['ARO per Month']:,.2f}"},
+                {"Property Description": "Conversion Factor", "Value": f"{sd_results['ARO Conversion Factor']:.6f}"}
+            ]
+            st.table(pd.DataFrame(aro_data))
+        st.markdown('</div>', unsafe_allow_html=True)
